@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: gitomyapp
-          image: yassmineg/gitomyapp:5e1db8c
+          image: yassmineg/gitomyapp:886de7c
           ports:
             - containerPort: 80
 
