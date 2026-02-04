@@ -3,10 +3,10 @@ name: build-and-push
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
+      - main
 
 permissions:
   contents: write
@@ -93,8 +93,8 @@ jobs:
 
       - name: Commit and push changes
         run: |
-          git config --global user.name "Nordine GRASSA"
-          git config --global user.email "ngrassa@users.noreply.github.com"
+          git config --global user.name "YASSMINE GRASSA"
+          git config --global user.email "yasminegr432@gmail.com"
           git add k8s/deployment.yaml
           git commit -m "Update image to ${{ secrets.DOCKER_USERNAME }}/gitomyapp:${{ env.IMAGE_TAG }}" || echo "No changes to commit"
           git push
