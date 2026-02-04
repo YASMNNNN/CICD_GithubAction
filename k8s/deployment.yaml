@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitomyapp
+  labels:
+    app: gitomyapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitomyapp
+  template:
+    metadata:
+      labels:
+        app: gitomyapp
+    spec:
+      containers:
+        - name: gitomyapp
+          image: grassa77/gitomyapp:67a64e6
+          ports:
+            - containerPort: 80
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitomyapp-service
+  labels:
+    app: gitomyapp
+spec:
+  type: ClusterIP
+  selector:
+    app: gitomyapp
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
