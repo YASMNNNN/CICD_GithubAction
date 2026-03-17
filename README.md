@@ -4,10 +4,11 @@
 
 Le pipeline se déclenche automatiquement lors d'un **Push** ou **Pull Request** sur la branche `master`.
 Voici la version avec SAST intégré.Le SAST après le build et avant le push, ce qui est la bonne pratique : analyser le code source ET l'image avant de publier quoi que ce soit.
-Outils SAST intégrés :
 
-Semgrep → analyse statique du code source (OWASP, secrets, vulnérabilités)
-Trivy → scan de l'image Docker pour les CVE
+# Outils SAST intégrés :
+
+1- Semgrep → analyse statique du code source (OWASP, secrets, vulnérabilités)
+2- Trivy → scan de l'image Docker pour les CVE
 
 ---
 
