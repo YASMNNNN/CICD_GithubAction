@@ -8,152 +8,62 @@ Le pipeline se déclenche automatiquement lors d'un **Push** ou **Pull Request**
 
 ## Architecture du Pipeline
 
+```mermaid
+flowchart TD
+    TRIGGER(["🚀 Push / Pull Request\nsur la branche **main**"])
+
+    subgraph JOB1["⚙️ Job 1 — Build"]
+        B1["1. Checkout — code source"]
+        B2["2. Set SHA — tag unique ex: c711dd9"]
+        B3["3. Build — image Docker"]
+        B4["4. Save — sauvegarde en .tar"]
+        B5["5. Upload — artifact pour jobs suivants"]
+        B1 --> B2 --> B3 --> B4 --> B5
+    end
+
+    subgraph JOB2["🔍 Job 2 — SAST Code · Semgrep"]
+        S1["1. Checkout — code source"]
+        S2["2. Semgrep — OWASP Top 10, secrets, Docker"]
+        S3["3. SARIF — upload GitHub Security"]
+        S1 --> S2 --> S3
+    end
+
+    subgraph JOB3["🔍 Job 3 — SAST Image · Trivy"]
+        T1["1. Download — récupère le .tar"]
+        T2["2. Load — charge l'image Docker"]
+        T3["3. Trivy — scan CRITICAL / HIGH"]
+        T4["4. SARIF — upload GitHub Security"]
+        T1 --> T2 --> T3 --> T4
+    end
+
+    subgraph JOB4["📦 Job 4 — Push · Docker Hub"]
+        P1["1. Download — récupère le .tar"]
+        P2["2. Load — charge l'image Docker"]
+        P3["3. Login + Push — Docker Hub"]
+        P1 --> P2 --> P3
+    end
+
+    subgraph JOB5["🚢 Job 5 — Deploy · GitOps"]
+        D1["1. Checkout — code source"]
+        D2["2. Update YAML — nouveau tag dans deployment.yaml"]
+        D3["3. Commit + Push — mise à jour sur GitHub"]
+        D1 --> D2 --> D3
+    end
+
+    TRIGGER --> JOB1
+    JOB1 --> JOB2
+    JOB1 --> JOB3
+    JOB2 --> JOB4
+    JOB3 --> JOB4
+    JOB4 --> JOB5
+
+    style TRIGGER fill:#4a4a8a,color:#fff,stroke:#3a3a7a
+    style JOB1   fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style JOB2   fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style JOB3   fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style JOB4   fill:#ede9fe,stroke:#7c3aed,color:#2e1065
+    style JOB5   fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
 ```
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pipeline CI/CD avec SAST</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #f5f5f5;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 32px 16px;
-      margin: 0;
-    }
-    h1 {
-      font-size: 18px;
-      font-weight: 500;
-      color: #1a1a1a;
-      margin-bottom: 8px;
-    }
-    p {
-      font-size: 13px;
-      color: #666;
-      margin-bottom: 24px;
-    }
-    .card {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
-      padding: 24px;
-      max-width: 720px;
-      width: 100%;
-    }
-    svg text { font-family: sans-serif; }
-  </style>
-</head>
-<body>
-  <h1>Pipeline CI/CD avec SAST intégré</h1>
-  <p>Pr Noureddine GRASSA — ISET Sousse</p>
-  <div class="card">
-<svg width="100%" viewBox="0 0 680 860" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-  </marker>
-</defs>
-
-<!-- DÉCLENCHEUR -->
-<rect x="120" y="20" width="440" height="56" rx="8" fill="#E8E7E1" stroke="#888780" stroke-width="0.5"/>
-<text font-size="14" font-weight="500" fill="#444441" x="340" y="43" text-anchor="middle" dominant-baseline="central">Déclencheur</text>
-<text font-size="12" fill="#5F5E5A" x="340" y="61" text-anchor="middle" dominant-baseline="central">Push ou Pull Request sur la branche "main"</text>
-
-<!-- Arrow déclencheur → build -->
-<line x1="340" y1="76" x2="340" y2="108" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
-
-<!-- JOB 1 : BUILD -->
-<rect x="120" y="108" width="440" height="158" rx="8" fill="#E6F1FB" stroke="#378ADD" stroke-width="0.5"/>
-<text font-size="14" font-weight="500" fill="#0C447C" x="340" y="130" text-anchor="middle" dominant-baseline="central">Job 1 — Build</text>
-<rect x="136" y="144" width="408" height="114" rx="6" fill="none" stroke="#ccc" stroke-width="0.5"/>
-<text font-size="12" fill="#185FA5" x="152" y="164" dominant-baseline="central">1. Checkout</text>
-<text font-size="12" fill="#444" x="280" y="164" dominant-baseline="central">Télécharge le code source</text>
-<text font-size="12" fill="#185FA5" x="152" y="183" dominant-baseline="central">2. Set SHA</text>
-<text font-size="12" fill="#444" x="280" y="183" dominant-baseline="central">Crée un tag unique (ex: c711dd9)</text>
-<text font-size="12" fill="#185FA5" x="152" y="202" dominant-baseline="central">3. Build image</text>
-<text font-size="12" fill="#444" x="280" y="202" dominant-baseline="central">Construit l'image Docker</text>
-<text font-size="12" fill="#185FA5" x="152" y="221" dominant-baseline="central">4. Save image</text>
-<text font-size="12" fill="#444" x="280" y="221" dominant-baseline="central">Sauvegarde en fichier .tar</text>
-<text font-size="12" fill="#185FA5" x="152" y="240" dominant-baseline="central">5. Upload</text>
-<text font-size="12" fill="#444" x="280" y="240" dominant-baseline="central">Stocke le .tar comme artifact</text>
-
-<!-- Arrow build → fork -->
-<line x1="340" y1="266" x2="340" y2="290" stroke="#888" stroke-width="1.5"/>
-<line x1="180" y1="290" x2="500" y2="290" stroke="#888" stroke-width="1.5"/>
-<line x1="180" y1="290" x2="180" y2="318" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
-<line x1="500" y1="290" x2="500" y2="318" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
-
-<!-- JOB 2 : SAST-CODE -->
-<rect x="40" y="318" width="280" height="170" rx="8" fill="#E1F5EE" stroke="#1D9E75" stroke-width="0.5"/>
-<text font-size="14" font-weight="500" fill="#085041" x="180" y="340" text-anchor="middle" dominant-baseline="central">Job 2 — SAST code</text>
-<text font-size="12" fill="#0F6E56" x="180" y="358" text-anchor="middle" dominant-baseline="central">Semgrep — analyse statique</text>
-<rect x="56" y="370" width="248" height="110" rx="6" fill="none" stroke="#ccc" stroke-width="0.5"/>
-<text font-size="12" fill="#0F6E56" x="68" y="390" dominant-baseline="central">1. Checkout</text>
-<text font-size="12" fill="#444" x="156" y="390" dominant-baseline="central">Télécharge le code</text>
-<text font-size="12" fill="#0F6E56" x="68" y="409" dominant-baseline="central">2. Semgrep</text>
-<text font-size="12" fill="#444" x="156" y="409" dominant-baseline="central">OWASP, secrets, Docker</text>
-<text font-size="12" fill="#0F6E56" x="68" y="428" dominant-baseline="central">3. SARIF</text>
-<text font-size="12" fill="#444" x="156" y="428" dominant-baseline="central">Upload GitHub Security</text>
-<text font-size="12" fill="#0F6E56" x="68" y="447" dominant-baseline="central">4. Résultat</text>
-<text font-size="12" fill="#444" x="156" y="447" dominant-baseline="central">Bloque si findings critiques</text>
-
-<!-- JOB 3 : SAST-IMAGE -->
-<rect x="360" y="318" width="280" height="170" rx="8" fill="#E1F5EE" stroke="#1D9E75" stroke-width="0.5"/>
-<text font-size="14" font-weight="500" fill="#085041" x="500" y="340" text-anchor="middle" dominant-baseline="central">Job 3 — SAST image</text>
-<text font-size="12" fill="#0F6E56" x="500" y="358" text-anchor="middle" dominant-baseline="central">Trivy — scan CVE Docker</text>
-<rect x="376" y="370" width="248" height="110" rx="6" fill="none" stroke="#ccc" stroke-width="0.5"/>
-<text font-size="12" fill="#0F6E56" x="388" y="390" dominant-baseline="central">1. Download</text>
-<text font-size="12" fill="#444" x="476" y="390" dominant-baseline="central">Récupère le .tar</text>
-<text font-size="12" fill="#0F6E56" x="388" y="409" dominant-baseline="central">2. Load image</text>
-<text font-size="12" fill="#444" x="476" y="409" dominant-baseline="central">Charge l'image Docker</text>
-<text font-size="12" fill="#0F6E56" x="388" y="428" dominant-baseline="central">3. Trivy</text>
-<text font-size="12" fill="#444" x="476" y="428" dominant-baseline="central">CRITICAL/HIGH → SARIF</text>
-<text font-size="12" fill="#0F6E56" x="388" y="447" dominant-baseline="central">4. Résultat</text>
-<text font-size="12" fill="#444" x="476" y="447" dominant-baseline="central">Table lisible en console</text>
-
-<!-- Join vers push -->
-<line x1="180" y1="488" x2="180" y2="512" stroke="#888" stroke-width="1.5"/>
-<line x1="500" y1="488" x2="500" y2="512" stroke="#888" stroke-width="1.5"/>
-<line x1="180" y1="512" x2="500" y2="512" stroke="#888" stroke-width="1.5"/>
-<line x1="340" y1="512" x2="340" y2="536" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
-
-<!-- JOB 4 : PUSH -->
-<rect x="120" y="536" width="440" height="136" rx="8" fill="#EEEDFE" stroke="#7F77DD" stroke-width="0.5"/>
-<text font-size="14" font-weight="500" fill="#3C3489" x="340" y="558" text-anchor="middle" dominant-baseline="central">Job 4 — Push</text>
-<text font-size="12" fill="#534AB7" x="340" y="575" text-anchor="middle" dominant-baseline="central">Conditionné au succès des deux jobs SAST</text>
-<rect x="136" y="588" width="408" height="76" rx="6" fill="none" stroke="#ccc" stroke-width="0.5"/>
-<text font-size="12" fill="#534AB7" x="152" y="608" dominant-baseline="central">1. Download</text>
-<text font-size="12" fill="#444" x="280" y="608" dominant-baseline="central">Récupère le fichier .tar</text>
-<text font-size="12" fill="#534AB7" x="152" y="627" dominant-baseline="central">2. Load image</text>
-<text font-size="12" fill="#444" x="280" y="627" dominant-baseline="central">Charge l'image Docker</text>
-<text font-size="12" fill="#534AB7" x="152" y="646" dominant-baseline="central">3. Login + Push</text>
-<text font-size="12" fill="#444" x="280" y="646" dominant-baseline="central">Connexion et push vers Docker Hub</text>
-
-<!-- Arrow push → deploy -->
-<line x1="340" y1="672" x2="340" y2="704" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
-
-<!-- JOB 5 : DEPLOY -->
-<rect x="120" y="704" width="440" height="136" rx="8" fill="#FAECE7" stroke="#D85A30" stroke-width="0.5"/>
-<text font-size="14" font-weight="500" fill="#712B13" x="340" y="726" text-anchor="middle" dominant-baseline="central">Job 5 — Deploy</text>
-<rect x="136" y="740" width="408" height="92" rx="6" fill="none" stroke="#ccc" stroke-width="0.5"/>
-<text font-size="12" fill="#993C1D" x="152" y="760" dominant-baseline="central">1. Checkout</text>
-<text font-size="12" fill="#444" x="280" y="760" dominant-baseline="central">Télécharge le code source</text>
-<text font-size="12" fill="#993C1D" x="152" y="779" dominant-baseline="central">2. Update YAML</text>
-<text font-size="12" fill="#444" x="280" y="779" dominant-baseline="central">Modifie deployment.yaml avec nouveau tag</text>
-<text font-size="12" fill="#993C1D" x="152" y="798" dominant-baseline="central">3. Commit/Push</text>
-<text font-size="12" fill="#444" x="280" y="798" dominant-baseline="central">Enregistre les changements sur GitHub</text>
-</svg>
-  </div>
-</body>
-</html>
-<img width="1412" height="1786" alt="image" src="https://github.com/user-attachments/assets/776c92aa-76c2-41aa-b28a-375fdf5b9e76" />
-
-```
-
 ---
 
 ## Résumé des Jobs
